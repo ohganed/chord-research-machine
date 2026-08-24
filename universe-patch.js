@@ -1,4 +1,4 @@
-/* Parallel Universes v1.6.2 patch */
+/* Parallel Universes v1.9 unified audio */
 (function(){
 let pool=[],serial=0,currentFilter=null;
 function variant(base,n){
@@ -14,11 +14,12 @@ function bases(){const a=universeTemplates();return state.universeFilter==='All'
 function reset(){pool=[];serial=0;currentFilter=state.universeFilter;add(12)}
 function add(n=8){const b=bases();if(!b.length)return;const s=pool.length;for(let i=0;i<n;i++){const q=s+i;pool.push(make(b[q%b.length],Math.floor(q/b.length)+1))}}
 function moreLike(u,n=6){for(let i=0;i<n;i++)pool.push(make(u,i+1))}
+async function preview(seq){if(window.CRMAudio)return CRMAudio.playSequence(seq);return playList(seq)}
 window.renderUniverses=function(){
  if(currentFilter!==state.universeFilter)reset();if(!pool.length)reset();
- const box=document.getElementById('universes');box.innerHTML='';
- pool.forEach((u,i)=>{const d=document.createElement('div');d.className='universe';d.innerHTML=`<div class="universeMeta"><h3>Universe ${String(i+1).padStart(2,'0')} · ${u.title}</h3><span class="universeScore">${u.score}% fit</span></div><div class="route">${u.seq.map(chordName).join(' → ')}</div><div class="why">${u.why}</div><div class="universeTags">${u.tags.map(t=>`<span class="universeTag">${t}</span>`).join('')}</div><div class="btnRow" style="margin-top:9px"><button class="btn small">Preview</button><button class="btn small primary">Use route</button><button class="btn small">Continue from here</button><button class="btn small">＋ More like this</button></div>`;
- const [p,use,cont,ml]=d.querySelectorAll('button');p.onclick=()=>playList(u.seq);use.onclick=()=>{pushHistory();state.lanes[state.activeSection].push(...u.seq.map(x=>({...x})));renderLane();updateExports();learnRoute(u.seq);renderHarmonyCompass()};cont.onclick=()=>{const last=u.seq[u.seq.length-1];state.current={...last};renderCurrent();playChord(last);generateCandidates()};ml.onclick=()=>{moreLike(u);renderUniverses()};box.appendChild(d)});
+ const box=document.getElementById('universes');if(!box)return;box.innerHTML='';
+ pool.forEach((u,i)=>{const d=document.createElement('div');d.className='universe';d.innerHTML=`<div class="universeMeta"><h3>Universe ${String(i+1).padStart(2,'0')} · ${u.title}</h3><span class="universeScore">${u.score}% fit</span></div><div class="route">${u.seq.map(chordName).join(' → ')}</div><div class="why">${u.why}</div><div class="universeTags">${u.tags.map(t=>`<span class="universeTag">${t}</span>`).join('')}</div><div class="btnRow" style="margin-top:9px"><button class="btn small">Preview</button><button class="btn small">A</button><button class="btn small">B</button><button class="btn small primary">Use route</button><button class="btn small">Continue</button><button class="btn small">＋ More like this</button></div>`;
+ const [p,a,b,use,cont,ml]=d.querySelectorAll('button');p.onclick=()=>preview(u.seq);a.onclick=()=>{if(window.CRMAudio){CRMAudio.saveA(u.seq);CRMAudio.playSequence(u.seq)}};b.onclick=()=>{if(window.CRMAudio){CRMAudio.saveB(u.seq);CRMAudio.playSequence(u.seq)}};use.onclick=()=>{pushHistory();state.lanes[state.activeSection].push(...u.seq.map(x=>({...x})));renderLane();updateExports();learnRoute(u.seq);try{renderHarmonyCompass()}catch(e){}};cont.onclick=()=>{const last=u.seq[u.seq.length-1];state.current={...last};renderCurrent();if(window.CRMAudio)CRMAudio.playChord(last);else playChord(last);generateCandidates()};ml.onclick=()=>{moreLike(u);renderUniverses()};box.appendChild(d)});
 };
 const more=document.getElementById('moreUniversesBtn'),regen=document.getElementById('reshuffleUniversesBtn');
 if(more){more.textContent='＋ More universes';more.onclick=()=>{add(8);renderUniverses()}}
